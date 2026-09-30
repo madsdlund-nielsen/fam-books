@@ -11,6 +11,7 @@ const FB_RELATIONS = [
     'andet' => 'Andet',
 ];
 const FB_CHANNELS = ['email' => 'Mail', 'sms' => 'Sms'];
+const FB_MARKETING_CONSENT = 'Ja tak, send mig nyheder og tilbud fra Familiebøger, fx rabat på ekstra eksemplarer af bogen. Jeg kan altid framelde mig igen.';
 
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $sessionId = (string) ($method === 'POST' ? ($_POST['session_id'] ?? '') : ($_GET['session_id'] ?? ''));
@@ -61,6 +62,7 @@ $values = [
     'recipient_email' => $order['recipient_email'] ?? '',
     'recipient_phone' => $order['recipient_phone'] ?? '',
     'notes' => $order['notes'] ?? '',
+    'marketing_consent' => $order['marketing_consent_at'] !== null,
 ];
 $errors = [];
 
@@ -74,6 +76,7 @@ if ($method === 'POST' && !$started) {
         'recipient_email' => trim((string) ($_POST['recipient_email'] ?? '')),
         'recipient_phone' => trim((string) ($_POST['recipient_phone'] ?? '')),
         'notes' => trim((string) ($_POST['notes'] ?? '')),
+        'marketing_consent' => ($_POST['marketing_consent'] ?? '') === '1',
     ];
 
     if (!isset($options[$values['start_date']])) {
@@ -119,6 +122,7 @@ if ($method === 'POST' && !$started) {
 
     if ($errors === []) {
         fb_order_save_details((int) $order['id'], $values);
+        fb_order_save_marketing_consent((int) $order['id'], $values['marketing_consent'], FB_MARKETING_CONSENT);
         fb_redirect('tak.php?session_id=' . rawurlencode($sessionId) . '&gemt=1');
     }
 }
@@ -237,6 +241,11 @@ fb_page_start($showForm ? 'Tak for dit køb' : 'Alt er på plads');
         <?= fb_field_error($errors, 'notes') ?>
       </div>
 
+      <label class="checkbox">
+        <input type="checkbox" name="marketing_consent" value="1" <?= $values['marketing_consent'] ? 'checked' : '' ?>>
+        <span><?= h(FB_MARKETING_CONSENT) ?> <span class="hint">(valgfrit)</span></span>
+      </label>
+
       <div><button type="submit" class="btn btn--primary">Gem og afslut</button></div>
       <p class="form-small">Gem gerne linket til denne side. Her kan du rette oplysningerne frem til startdatoen.</p>
     </form>
@@ -270,7 +279,7 @@ fb_page_start($showForm ? 'Tak for dit køb' : 'Alt er på plads');
           <dt>Købt af</dt><dd><?= h(trim(($order['buyer_name'] ?? '') . ' · ' . $order['buyer_email'], ' ·')) ?></dd>
         <?php endif; ?>
         <?php if ($order['amount_total'] !== null): ?>
-          <dt>Abonnement</dt><dd><?= h(fb_money((int) $order['amount_total'], $order['currency'])) ?> om året · fornyes automatisk, kan opsiges når som helst</dd>
+          <dt>Abonnement</dt><dd><?= h(fb_money((int) $order['amount_total'], $order['currency'])) ?> om året · fornyes automatisk · opsigelse gælder fra næste periode</dd>
         <?php endif; ?>
         <?php if ($order['notes']): ?>
           <dt>Bemærkninger</dt><dd><?= nl2br(h($order['notes'])) ?></dd>
