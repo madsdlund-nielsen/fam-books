@@ -83,6 +83,20 @@ never affect the live anchor. Change the numbers in `config.php` → `start_date
    recurring payments, which in practice means cards.
 7. Test the whole flow with test card `4242 4242 4242 4242`, then switch to live keys.
 
+## Search engines and AI assistants
+
+- `index.html` has a canonical URL, Open Graph/Twitter tags with `assets/img/og-image.png`
+  (1200×630), and JSON-LD structured data: Organization, WebSite, WebPage, Product with
+  the yearly 899 DKK offer, and FAQPage. The FAQPage text must match the visible FAQ; the
+  e2e test fails if they drift apart, so update both together.
+- `robots.txt` allows all crawlers (including AI crawlers) and keeps them out of the
+  checkout, thank-you and API endpoints. `sitemap.xml` lists the landing page.
+- `llms.txt` is a plain-language summary of the product for AI assistants. Keep it in line
+  with the page.
+- After launch: add the site in Google Search Console and submit
+  `https://xn--familiebger-ngb.dk/sitemap.xml`, then check the page with Google's Rich
+  Results Test.
+
 ## Looking at the data (phpMyAdmin)
 
 ```sql

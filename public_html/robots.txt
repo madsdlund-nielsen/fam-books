@@ -1,0 +1,13 @@
+# Familiebøger — search engines and AI assistants are welcome.
+# The checkout, thank-you and API endpoints are not pages to index.
+User-agent: *
+Allow: /
+Disallow: /_private/
+Disallow: /kob.php
+Disallow: /tak.php
+Disallow: /abonnement.php
+Disallow: /venteliste.php
+Disallow: /startdato.php
+Disallow: /stripe-webhook.php
+
+Sitemap: https://xn--familiebger-ngb.dk/sitemap.xml

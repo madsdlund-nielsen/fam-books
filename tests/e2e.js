@@ -25,6 +25,37 @@ const check = (label, ok, extra = '') => { console.log(`${ok ? 'PASS' : 'FAIL'} 
   check('page title', (await page.title()).startsWith('Familiebøger'));
   await page.screenshot({ path: `${SHOTS}/landing-desktop.png`, fullPage: true });
 
+  // Search engines / LLMs: structured data, meta tags, robots, sitemap, llms.txt
+  const seo = await page.evaluate(() => {
+    const ld = [...document.querySelectorAll('script[type="application/ld+json"]')].map((s) => JSON.parse(s.textContent));
+    const meta = (sel) => (document.querySelector(sel) || {}).content || (document.querySelector(sel) || {}).href || '';
+    return {
+      ld,
+      faqVisible: [...document.querySelectorAll('#faq summary')].map((s) => s.textContent.trim()),
+      canonical: meta('link[rel=canonical]'),
+      ogImage: meta('meta[property="og:image"]'),
+      ogUrl: meta('meta[property="og:url"]'),
+      twitter: meta('meta[name="twitter:card"]'),
+      description: meta('meta[name=description]'),
+    };
+  });
+  const graph = (seo.ld[0] || {})['@graph'] || [];
+  const byType = Object.fromEntries(graph.map((n) => [n['@type'], n]));
+  check('JSON-LD has Organization, WebSite, WebPage, Product, FAQPage', ['Organization', 'WebSite', 'WebPage', 'Product', 'FAQPage'].every((t) => byType[t]), Object.keys(byType).join(','));
+  check('JSON-LD FAQ matches the visible FAQ', JSON.stringify(byType.FAQPage.mainEntity.map((q) => q.name)) === JSON.stringify(seo.faqVisible));
+  const offer = byType.Product.offers;
+  check('JSON-LD offer: 899 DKK per year incl. VAT', offer.price === '899' && offer.priceCurrency === 'DKK' && offer.priceSpecification.billingDuration === 'P1Y' && offer.priceSpecification.valueAddedTaxIncluded === true);
+  check('canonical and og:url are the punycode domain', seo.canonical === 'https://xn--familiebger-ngb.dk/' && seo.ogUrl === seo.canonical);
+  check('og:image is absolute and the file exists', seo.ogImage === 'https://xn--familiebger-ngb.dk/assets/img/og-image.png' && execSync(`curl -s -o /dev/null -w '%{http_code} %{content_type}' ${SITE}/assets/img/og-image.png`).toString() === '200 image/png');
+  check('twitter card + description present', seo.twitter === 'summary_large_image' && seo.description.length > 50 && seo.description.length <= 160);
+  const robots = execSync(`curl -s ${SITE}/robots.txt`).toString();
+  check('robots.txt allows the site, blocks checkout/API, lists the sitemap', /User-agent: \*\nAllow: \//.test(robots) && robots.includes('Disallow: /kob.php') && robots.includes('Disallow: /tak.php') && robots.includes('Sitemap: https://xn--familiebger-ngb.dk/sitemap.xml'));
+  check('sitemap.xml lists the home page', execSync(`curl -s ${SITE}/sitemap.xml`).toString().includes('<loc>https://xn--familiebger-ngb.dk/</loc>'));
+  const llms = execSync(`curl -s ${SITE}/llms.txt`).toString();
+  check('llms.txt describes the product and price', llms.startsWith('# Familiebøger') && llms.includes('899 kr. om året') && llms.includes('12 måneder'));
+  const tak = execSync(`curl -s -D - -o /dev/null '${SITE}/tak.php?session_id=hack'`).toString();
+  check('PHP pages are noindex', /X-Robots-Tag: noindex/i.test(tak));
+
   // Waitlist: invalid then valid
   await page.fill('#wl-email', 'not-an-email');
   await page.click('[data-waitlist-form] button[type=submit]');
