@@ -54,11 +54,11 @@ never affect the live anchor. Change the numbers in `config.php` → `start_date
 
 ### Stripe setup
 
-1. Product: **Familiebøger – 12 måneders forløb** (`prod_VM9Qxqvr80ceiw`). Checkout
-   charges `stripe.amount` (89900 øre = 899 kr., VAT included) on `stripe.product_id`,
-   so no Price object is needed. If you'd rather use a fixed Price, put its `price_…` ID
-   in `stripe.price_id`; it then takes precedence. Product and price IDs differ between
-   test and live mode, so the IDs must match the mode of `secret_key`.
+1. Product: **Familiebøger – 12 måneders forløb** (`prod_VM9Qxqvr80ceiw`), price
+   `price_1ULR7bECicFapRox9jg8nyAh`. Checkout uses `stripe.price_id` when it is set.
+   If you empty it, Checkout charges `stripe.amount` (89900 øre = 899 kr., VAT included)
+   on `stripe.product_id` instead. Product and price IDs differ between test and live
+   mode, so the IDs must match the mode of `secret_key`.
 2. API key: Developers → API keys. Use `sk_test_…` while testing. For live, a restricted
    key (`rk_live_…`) with **Checkout Sessions: Write** is enough.
 3. Webhook: Developers → Webhooks → add endpoint `https://<site>/stripe-webhook.php` with

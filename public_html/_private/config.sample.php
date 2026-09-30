@@ -29,9 +29,10 @@ return [
         'amount' => 89900,
         'currency' => 'dkk',
 
-        // Valgfrit: et fast pris-id (price_...) på produktet. Hvis det er
-        // udfyldt, bruges det i stedet for product_id + amount.
-        'price_id' => '',
+        // Fast pris-id (price_...) på produktet. Når det er udfyldt, bruges
+        // det i stedet for product_id + amount. Tøm feltet for at falde tilbage
+        // til product_id + amount.
+        'price_id' => 'price_1ULR7bECicFapRox9jg8nyAh',
 
         // Signeringsnøgle fra Stripe → Udviklere → Webhooks → dit endpoint
         // (https://<site_url>/stripe-webhook.php). Anbefales, så betalinger
