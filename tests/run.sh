@@ -10,7 +10,8 @@ rm -f "$(php -r 'echo sys_get_temp_dir();')/fb-mock-stripe.json"
 
 php -S 127.0.0.1:12111 tests/mock_stripe.php > /tmp/fb-mock.log 2>&1 & MOCK=$!
 FB_CONFIG="$PWD/tests/config.test.php" php -S 127.0.0.1:8080 -t public_html > /tmp/fb-site.log 2>&1 & SITE=$!
-trap 'kill $MOCK $SITE 2>/dev/null || true' EXIT
+FB_CONFIG="$PWD/tests/config.test-price.php" php -S 127.0.0.1:8081 -t public_html > /tmp/fb-site-price.log 2>&1 & SITE2=$!
+trap 'kill $MOCK $SITE $SITE2 2>/dev/null || true' EXIT
 sleep 1
 
 php tests/start_dates_test.php

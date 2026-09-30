@@ -12,10 +12,29 @@ if (!in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'POST'], true)) {
 $cfg = fb_config();
 $site = rtrim($cfg['site_url'], '/');
 
+// Prefer a Stripe Price if configured; otherwise charge the configured amount on the product.
+$stripeCfg = $cfg['stripe'];
+if (!empty($stripeCfg['price_id'])) {
+    $lineItem = ['price' => $stripeCfg['price_id'], 'quantity' => 1];
+} elseif (!empty($stripeCfg['product_id']) && !empty($stripeCfg['amount'])) {
+    $lineItem = [
+        'price_data' => [
+            'product' => $stripeCfg['product_id'],
+            'currency' => strtolower($stripeCfg['currency'] ?? 'dkk'),
+            'unit_amount' => (int) $stripeCfg['amount'],
+            'tax_behavior' => 'inclusive',
+        ],
+        'quantity' => 1,
+    ];
+} else {
+    error_log('Familiebøger: set stripe.price_id or stripe.product_id + stripe.amount in config.php');
+    fb_error_page(500, 'Betalingen kunne ikke startes', 'Siden er ikke sat helt op endnu. Prøv igen senere.');
+}
+
 try {
     $session = fb_stripe_request('POST', '/v1/checkout/sessions', [
         'mode' => 'payment',
-        'line_items' => [['price' => $cfg['stripe']['price_id'], 'quantity' => 1]],
+        'line_items' => [$lineItem],
         'success_url' => $site . '/tak.php?session_id={CHECKOUT_SESSION_ID}',
         'cancel_url' => $site . '/#pris',
         'locale' => 'da',

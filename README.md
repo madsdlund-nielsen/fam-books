@@ -45,7 +45,7 @@ never affect the live anchor. Change the numbers in `config.php` → `start_date
    and import `database/schema.sql`.
 2. **Config**: copy `public_html/_private/config.sample.php` to
    `public_html/_private/config.php` and fill in the database details, `site_url`, the
-   Stripe secret key, price ID and webhook secret. `config.php` is git-ignored, so never commit it.
+   Stripe secret key, product ID and webhook secret. `config.php` is git-ignored, so never commit it.
 3. **Upload** everything inside `public_html/` (including `_private/` with its `.htaccess`)
    to the site's webroot over SFTP/FTP.
 4. **HTTPS**: make sure the site runs on https (simply.com provides free certificates).
@@ -54,8 +54,11 @@ never affect the live anchor. Change the numbers in `config.php` → `start_date
 
 ### Stripe setup
 
-1. Product: **Familiebøger – 12 måneders forløb**, one-time price **899 DKK**. Put the
-   `price_…` ID in `config.php`.
+1. Product: **Familiebøger – 12 måneders forløb** (`prod_VM9Qxqvr80ceiw`). Checkout
+   charges `stripe.amount` (89900 øre = 899 kr., VAT included) on `stripe.product_id`,
+   so no Price object is needed. If you'd rather use a fixed Price, put its `price_…` ID
+   in `stripe.price_id`; it then takes precedence. Product and price IDs differ between
+   test and live mode, so the IDs must match the mode of `secret_key`.
 2. API key: Developers → API keys. Use `sk_test_…` while testing. For live, a restricted
    key (`rk_live_…`) with **Checkout Sessions: Write** is enough.
 3. Webhook: Developers → Webhooks → add endpoint `https://<site>/stripe-webhook.php` with

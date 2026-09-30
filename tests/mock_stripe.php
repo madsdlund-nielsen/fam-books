@@ -17,13 +17,21 @@ if (str_starts_with($path, '/v1/') && ($_SERVER['HTTP_AUTHORIZATION'] ?? '') !==
 
 if ($method === 'POST' && $path === '/v1/checkout/sessions') {
     parse_str((string) file_get_contents('php://input'), $p);
-    if (($p['line_items'][0]['price'] ?? '') !== 'price_mock') {
-        $json(400, ['error' => ['message' => 'No such price']]);
+    $item = $p['line_items'][0] ?? [];
+    if (isset($item['price'])) {
+        if ($item['price'] !== 'price_mock') {
+            $json(400, ['error' => ['message' => 'No such price']]);
+        }
+        $amount = 89900;
+    } elseif (($item['price_data']['product'] ?? '') === 'prod_mock') {
+        $amount = (int) $item['price_data']['unit_amount'];
+    } else {
+        $json(400, ['error' => ['message' => 'No such product']]);
     }
     $id = 'cs_test_' . bin2hex(random_bytes(20));
     $db[$id] = [
         'id' => $id, 'object' => 'checkout.session', 'livemode' => false, 'mode' => $p['mode'],
-        'status' => 'open', 'payment_status' => 'unpaid', 'amount_total' => 89900, 'currency' => 'dkk',
+        'status' => 'open', 'payment_status' => 'unpaid', 'amount_total' => $amount, 'currency' => 'dkk',
         'metadata' => $p['metadata'] ?? [], 'success_url' => $p['success_url'], 'cancel_url' => $p['cancel_url'],
         'url' => 'http://127.0.0.1:12111/pay/' . $id, 'customer' => null, 'payment_intent' => null,
         'customer_details' => null, 'params' => $p,

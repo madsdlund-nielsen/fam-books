@@ -22,8 +22,16 @@ return [
         // begrænset rk_live_... nøgle med "Checkout Sessions: Write") ved lancering.
         'secret_key' => 'sk_test_REPLACE_ME',
 
-        // Pris-id for "Familiebøger – 12 måneders forløb" (899 kr.)
-        'price_id' => 'price_REPLACE_ME',
+        // Produktet "Familiebøger – 12 måneders forløb". Beløbet er i øre inkl. moms.
+        // Produkt-id'et er forskelligt i test- og live-tilstand, så brug det
+        // der passer til secret_key ovenfor.
+        'product_id' => 'prod_VM9Qxqvr80ceiw',
+        'amount' => 89900,
+        'currency' => 'dkk',
+
+        // Valgfrit: et fast pris-id (price_...) på produktet. Hvis det er
+        // udfyldt, bruges det i stedet for product_id + amount.
+        'price_id' => '',
 
         // Signeringsnøgle fra Stripe → Udviklere → Webhooks → dit endpoint
         // (https://<site_url>/stripe-webhook.php). Anbefales, så betalinger

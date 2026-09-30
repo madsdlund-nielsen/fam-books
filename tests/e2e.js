@@ -50,7 +50,9 @@ const check = (label, ok, extra = '') => { console.log(`${ok ? 'PASS' : 'FAIL'} 
   const anchor = sql("SELECT MIN(paid_at) FROM orders WHERE status='paid' AND livemode=0");
   check('order recorded as paid', sql(`SELECT CONCAT(status,'|',amount_total,'|',currency,'|',buyer_email) FROM orders WHERE stripe_session_id='${sessionId}'`) === 'paid|89900|DKK|karen@example.com');
   const params = JSON.parse(execSync(`cat $(php -r 'echo sys_get_temp_dir();')/fb-mock-stripe.json`).toString())[sessionId].params;
-  check('checkout: payment mode, DKK price, Danish, metadata', params.mode === 'payment' && params.locale === 'da' && params.metadata.product === 'familieboger' && params.success_url.endsWith('{CHECKOUT_SESSION_ID}'));
+  check('checkout: payment mode, Danish, metadata', params.mode === 'payment' && params.locale === 'da' && params.metadata.product === 'familieboger' && params.success_url.endsWith('{CHECKOUT_SESSION_ID}'));
+  const pd = params.line_items[0].price_data || {};
+  check('checkout: 899 DKK incl. VAT on the configured product', pd.product === 'prod_mock' && pd.unit_amount === '89900' && pd.currency === 'dkk' && pd.tax_behavior === 'inclusive', JSON.stringify(params.line_items));
   const options = await page.$$eval('input[name=start_date]', (els) => els.map((e) => e.value));
   check('8 start date options, first = Mon 19 Oct 2026 (week 40 + 3)', options.length === 8 && options[0] === '2026-10-19', options.join(','));
   await page.screenshot({ path: `${SHOTS}/tak-form-desktop.png`, fullPage: true });
@@ -109,6 +111,12 @@ const check = (label, ok, extra = '') => { console.log(`${ok ? 'PASS' : 'FAIL'} 
   const startedId = (loc.match(/pay\/(cs_test_\w+)/) || [])[1];
   check('kob.php 303-redirects to Stripe', loc.startsWith('303 http://127.0.0.1:12111/pay/cs_test_'), loc);
   check('abandoned checkout recorded as started', sql(`SELECT status FROM orders WHERE stripe_session_id='${startedId}'`) === 'started');
+
+  // Price-ID configuration (second site instance with price_id set)
+  const loc2 = execSync(`curl -s -o /dev/null -w '%{http_code} %{redirect_url}' -X POST http://127.0.0.1:8081/kob.php`).toString();
+  const priceSession = (loc2.match(/pay\/(cs_test_\w+)/) || [])[1];
+  const store = JSON.parse(execSync(`cat $(php -r 'echo sys_get_temp_dir();')/fb-mock-stripe.json`).toString());
+  check('price_id config uses the Stripe Price', loc2.startsWith('303 ') && store[priceSession] && store[priceSession].params.line_items[0].price === 'price_mock', loc2);
 
   // Mobile screenshots
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true });
