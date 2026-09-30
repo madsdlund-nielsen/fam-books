@@ -50,9 +50,11 @@ const check = (label, ok, extra = '') => { console.log(`${ok ? 'PASS' : 'FAIL'} 
   const anchor = sql("SELECT MIN(paid_at) FROM orders WHERE status='paid' AND livemode=0");
   check('order recorded as paid', sql(`SELECT CONCAT(status,'|',amount_total,'|',currency,'|',buyer_email) FROM orders WHERE stripe_session_id='${sessionId}'`) === 'paid|89900|DKK|karen@example.com');
   const params = JSON.parse(execSync(`cat $(php -r 'echo sys_get_temp_dir();')/fb-mock-stripe.json`).toString())[sessionId].params;
-  check('checkout: payment mode, Danish, metadata', params.mode === 'payment' && params.locale === 'da' && params.metadata.product === 'familieboger' && params.success_url.endsWith('{CHECKOUT_SESSION_ID}'));
+  check('checkout: subscription mode, Danish, metadata', params.mode === 'subscription' && params.locale === 'da' && params.metadata.product === 'familieboger' && params.subscription_data.metadata.product === 'familieboger' && params.success_url.endsWith('{CHECKOUT_SESSION_ID}'));
+  check('checkout: renewal is stated at the pay button', /fornyes automatisk hvert år/.test(params.custom_text.submit.message));
   const pd = params.line_items[0].price_data || {};
-  check('checkout: 899 DKK incl. VAT on the configured product', pd.product === 'prod_mock' && pd.unit_amount === '89900' && pd.currency === 'dkk' && pd.tax_behavior === 'inclusive', JSON.stringify(params.line_items));
+  check('checkout: 899 DKK/year incl. VAT on the configured product', pd.product === 'prod_mock' && pd.unit_amount === '89900' && pd.currency === 'dkk' && pd.recurring.interval === 'year' && pd.tax_behavior === 'inclusive', JSON.stringify(params.line_items));
+  check('order stores the subscription id', /^sub_mock/.test(sql(`SELECT stripe_subscription_id FROM orders WHERE stripe_session_id='${sessionId}'`)));
   const options = await page.$$eval('input[name=start_date]', (els) => els.map((e) => e.value));
   check('8 start date options, first = Mon 19 Oct 2026 (week 40 + 3)', options.length === 8 && options[0] === '2026-10-19', options.join(','));
   await page.screenshot({ path: `${SHOTS}/tak-form-desktop.png`, fullPage: true });
@@ -76,6 +78,15 @@ const check = (label, ok, extra = '') => { console.log(`${ok ? 'PASS' : 'FAIL'} 
   check('details saved', sql(`SELECT CONCAT(start_date,'|',recipient_name,'|',recipient_relation,'|',recipient_channel,'|',recipient_phone) FROM orders WHERE stripe_session_id='${sessionId}'`) === '2026-10-26|Inger Hansen|mormor|sms|+4512345678');
   await page.screenshot({ path: `${SHOTS}/tak-confirmation-desktop.png`, fullPage: true });
 
+  check('landing-price renewal wording is shown in the summary', body.includes('om året · fornyes automatisk'));
+
+  // Manage subscription → Stripe customer portal
+  await Promise.all([page.waitForURL(/127\.0\.0\.1:12111\/portal/), page.click('text=Administrér abonnement')]);
+  const portalReq = JSON.parse(execSync(`cat $(php -r 'echo sys_get_temp_dir();')/fb-mock-stripe.json`).toString())._last_portal;
+  check('portal opens for the buyer with return to tak.php', portalReq.customer === 'cus_mock123' && portalReq.return_url === `${SITE}/tak.php?session_id=${sessionId}`, JSON.stringify(portalReq));
+  check('portal refuses unknown sessions', execSync(`curl -s -o /dev/null -w '%{http_code}' -X POST -d 'session_id=cs_test_doesnotexist123' ${SITE}/abonnement.php`).toString() === '404');
+  await page.goto(`${SITE}/tak.php?session_id=${sessionId}`);
+
   // Edit link
   await page.click('text=Ret oplysninger');
   check('edit form is prefilled', (await page.inputValue('#recipient_phone')) === '+4512345678' && await page.isChecked('input[name=start_date][value="2026-10-26"]'));
@@ -87,7 +98,7 @@ const check = (label, ok, extra = '') => { console.log(`${ok ? 'PASS' : 'FAIL'} 
   // Bad / unknown / unpaid sessions
   check('invalid session id → 404', execSync(`curl -s -o /dev/null -w '%{http_code}' '${SITE}/tak.php?session_id=hack'`).toString() === '404');
   check('unknown session id → 404', execSync(`curl -s -o /dev/null -w '%{http_code}' '${SITE}/tak.php?session_id=cs_test_doesnotexist123'`).toString() === '404');
-  const unpaid = JSON.parse(execSync(`curl -s -u sk_test_mock: -H 'Authorization: Bearer sk_test_mock' -d 'mode=payment&line_items[0][price]=price_mock&line_items[0][quantity]=1&success_url=x&cancel_url=y&metadata[product]=familieboger' http://127.0.0.1:12111/v1/checkout/sessions`).toString());
+  const unpaid = JSON.parse(execSync(`curl -s -u sk_test_mock: -H 'Authorization: Bearer sk_test_mock' -d 'mode=subscription&line_items[0][price]=price_mock&line_items[0][quantity]=1&success_url=x&cancel_url=y&metadata[product]=familieboger' http://127.0.0.1:12111/v1/checkout/sessions`).toString());
   const unpaidPage = execSync(`curl -s '${SITE}/tak.php?session_id=${unpaid.id}'`).toString();
   check('unpaid session is not accepted', unpaidPage.includes('Betalingen er ikke gennemført') && sql(`SELECT COUNT(*) FROM orders WHERE stripe_session_id='${unpaid.id}' AND status='paid'`) === '0');
 

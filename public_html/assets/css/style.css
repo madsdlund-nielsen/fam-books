@@ -511,3 +511,6 @@ p { margin: 0; text-wrap: pretty; }
   .book { width: 50%; padding: 14% 10% 14% 16%; }
   .book__sub { font-size: 9px; letter-spacing: 0.14em; }
 }
+.panel__actions { display: flex; flex-wrap: wrap; gap: 12px 28px; align-items: center; }
+.panel__actions form { margin: 0; }
+.link-button { background: none; border: 0; border-bottom: 1.5px solid #B87B5C; border-radius: 0; font: inherit; font-weight: 600; font-size: 16px; cursor: pointer; }

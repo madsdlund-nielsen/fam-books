@@ -270,15 +270,23 @@ fb_page_start($showForm ? 'Tak for dit køb' : 'Alt er på plads');
           <dt>Købt af</dt><dd><?= h(trim(($order['buyer_name'] ?? '') . ' · ' . $order['buyer_email'], ' ·')) ?></dd>
         <?php endif; ?>
         <?php if ($order['amount_total'] !== null): ?>
-          <dt>Betalt</dt><dd><?= h(fb_money((int) $order['amount_total'], $order['currency'])) ?></dd>
+          <dt>Abonnement</dt><dd><?= h(fb_money((int) $order['amount_total'], $order['currency'])) ?> om året · fornyes automatisk, kan opsiges når som helst</dd>
         <?php endif; ?>
         <?php if ($order['notes']): ?>
           <dt>Bemærkninger</dt><dd><?= nl2br(h($order['notes'])) ?></dd>
         <?php endif; ?>
       </dl>
-      <?php if (!$started): ?>
-        <p><a class="link-underline" href="<?= h($link) ?>&amp;ret=1">Ret oplysninger</a></p>
-      <?php endif; ?>
+      <div class="panel__actions">
+        <?php if (!$started): ?>
+          <a class="link-underline" href="<?= h($link) ?>&amp;ret=1">Ret oplysninger</a>
+        <?php endif; ?>
+        <?php if ($order['stripe_customer_id']): ?>
+          <form method="post" action="abonnement.php">
+            <input type="hidden" name="session_id" value="<?= h($sessionId) ?>">
+            <button type="submit" class="link-underline link-button">Administrér abonnement</button>
+          </form>
+        <?php endif; ?>
+      </div>
     </div>
     <p><a class="btn btn--primary" href="./">Til forsiden</a></p>
 <?php endif; ?>

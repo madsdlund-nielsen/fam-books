@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS orders (
   currency              CHAR(3) NULL,
   stripe_payment_intent VARCHAR(255) NULL,
   stripe_customer_id    VARCHAR(255) NULL,
+  stripe_subscription_id VARCHAR(255) NULL COMMENT 'Yearly subscription (renews at 899 kr.)',
   buyer_name            VARCHAR(190) NULL,
   buyer_email           VARCHAR(190) NULL,
   paid_at               DATETIME NULL COMMENT 'UTC',
@@ -51,6 +52,9 @@ CREATE TABLE IF NOT EXISTS waitlist (
   PRIMARY KEY (id),
   UNIQUE KEY uq_waitlist_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Already imported an earlier version of this file? Add the new column with:
+--   ALTER TABLE orders ADD COLUMN stripe_subscription_id VARCHAR(255) NULL AFTER stripe_customer_id;
 
 -- Handy queries for phpMyAdmin:
 --   Funnel:      SELECT status, livemode, COUNT(*) FROM orders GROUP BY status, livemode;

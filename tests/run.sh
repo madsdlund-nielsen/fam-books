@@ -4,8 +4,9 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+mysql familieboger_test -e "DROP TABLE IF EXISTS orders, waitlist;"
 mysql familieboger_test < database/schema.sql
-mysql familieboger_test -e "TRUNCATE orders; TRUNCATE waitlist;"
+
 rm -f "$(php -r 'echo sys_get_temp_dir();')/fb-mock-stripe.json"
 
 php -S 127.0.0.1:12111 tests/mock_stripe.php > /tmp/fb-mock.log 2>&1 & MOCK=$!

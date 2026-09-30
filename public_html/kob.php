@@ -1,5 +1,6 @@
 <?php
-// "Køb Familiebøger": create a Stripe Checkout Session and send the buyer to it.
+// "Køb Familiebøger": create a Stripe Checkout Session for the yearly
+// subscription (899 kr./år) and send the buyer to it.
 declare(strict_types=1);
 require __DIR__ . '/_private/bootstrap.php';
 
@@ -12,7 +13,8 @@ if (!in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'POST'], true)) {
 $cfg = fb_config();
 $site = rtrim($cfg['site_url'], '/');
 
-// Prefer a Stripe Price if configured; otherwise charge the configured amount on the product.
+// Prefer the recurring Stripe Price if configured; otherwise charge the configured
+// yearly amount on the product.
 $stripeCfg = $cfg['stripe'];
 if (!empty($stripeCfg['price_id'])) {
     $lineItem = ['price' => $stripeCfg['price_id'], 'quantity' => 1];
@@ -22,6 +24,7 @@ if (!empty($stripeCfg['price_id'])) {
             'product' => $stripeCfg['product_id'],
             'currency' => strtolower($stripeCfg['currency'] ?? 'dkk'),
             'unit_amount' => (int) $stripeCfg['amount'],
+            'recurring' => ['interval' => 'year'],
             'tax_behavior' => 'inclusive',
         ],
         'quantity' => 1,
@@ -33,20 +36,19 @@ if (!empty($stripeCfg['price_id'])) {
 
 try {
     $session = fb_stripe_request('POST', '/v1/checkout/sessions', [
-        'mode' => 'payment',
+        'mode' => 'subscription',
         'line_items' => [$lineItem],
         'success_url' => $site . '/tak.php?session_id={CHECKOUT_SESSION_ID}',
         'cancel_url' => $site . '/#pris',
         'locale' => 'da',
-        'customer_creation' => 'always',
         'billing_address_collection' => 'auto',
         'metadata' => ['product' => 'familieboger'],
-        'payment_intent_data' => [
-            'description' => 'Familiebøger – 12 måneders forløb',
+        'subscription_data' => [
+            'description' => 'Familiebøger – årligt abonnement',
             'metadata' => ['product' => 'familieboger'],
         ],
         'custom_text' => [
-            'submit' => ['message' => 'Efter betalingen vælger du startdato og fortæller os, hvem der skal have spørgsmålene.'],
+            'submit' => ['message' => 'Abonnementet fornyes automatisk hvert år til 899 kr., indtil du opsiger det. Du kan opsige når som helst. Efter betalingen vælger du startdato og fortæller os, hvem der skal have spørgsmålene.'],
         ],
     ]);
 } catch (FbStripeError $e) {

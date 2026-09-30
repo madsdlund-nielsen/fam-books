@@ -19,19 +19,20 @@ return [
     'stripe' => [
         // Hemmelig nøgle fra Stripe → Udviklere → API-nøgler.
         // Brug sk_test_... mens I tester, og skift til sk_live_... (eller en
-        // begrænset rk_live_... nøgle med "Checkout Sessions: Write") ved lancering.
+        // begrænset rk_live_... nøgle med "Checkout Sessions: Write" og
+        // "Customer portal: Write") ved lancering.
         'secret_key' => 'sk_test_REPLACE_ME',
 
-        // Produktet "Familiebøger – 12 måneders forløb". Beløbet er i øre inkl. moms.
+        // Produktet "Familiebøger" som årligt abonnement. Beløbet er i øre inkl. moms
+        // og bruges kun, hvis price_id er tomt (så oprettes en årlig pris automatisk).
         // Produkt-id'et er forskelligt i test- og live-tilstand, så brug det
         // der passer til secret_key ovenfor.
         'product_id' => 'prod_VM9Qxqvr80ceiw',
         'amount' => 89900,
         'currency' => 'dkk',
 
-        // Fast pris-id (price_...) på produktet. Når det er udfyldt, bruges
-        // det i stedet for product_id + amount. Tøm feltet for at falde tilbage
-        // til product_id + amount.
+        // Den årlige, tilbagevendende pris (899 kr./år) på produktet. Når det er
+        // udfyldt, bruges det i stedet for product_id + amount.
         'price_id' => 'price_1ULR7bECicFapRox9jg8nyAh',
 
         // Signeringsnøgle fra Stripe → Udviklere → Webhooks → dit endpoint

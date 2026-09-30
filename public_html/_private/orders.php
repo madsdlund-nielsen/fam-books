@@ -22,13 +22,18 @@ function fb_order_record_paid(array $session): void
     if (is_array($customer)) {
         $customer = $customer['id'] ?? null;
     }
+    $subscription = $session['subscription'] ?? null;
+    if (is_array($subscription)) {
+        $subscription = $subscription['id'] ?? null;
+    }
     $details = $session['customer_details'] ?? [];
 
     $stmt = fb_db()->prepare(
         "INSERT INTO orders
             (stripe_session_id, status, livemode, amount_total, currency,
-             stripe_payment_intent, stripe_customer_id, buyer_name, buyer_email, paid_at)
-         VALUES (?, 'paid', ?, ?, ?, ?, ?, ?, ?, ?)
+             stripe_payment_intent, stripe_customer_id, stripe_subscription_id,
+             buyer_name, buyer_email, paid_at)
+         VALUES (?, 'paid', ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON DUPLICATE KEY UPDATE
             status = 'paid',
             livemode = VALUES(livemode),
@@ -36,6 +41,7 @@ function fb_order_record_paid(array $session): void
             currency = VALUES(currency),
             stripe_payment_intent = COALESCE(VALUES(stripe_payment_intent), stripe_payment_intent),
             stripe_customer_id = COALESCE(VALUES(stripe_customer_id), stripe_customer_id),
+            stripe_subscription_id = COALESCE(VALUES(stripe_subscription_id), stripe_subscription_id),
             buyer_name = COALESCE(VALUES(buyer_name), buyer_name),
             buyer_email = COALESCE(VALUES(buyer_email), buyer_email),
             paid_at = COALESCE(paid_at, VALUES(paid_at))"
@@ -47,6 +53,7 @@ function fb_order_record_paid(array $session): void
         isset($session['currency']) ? strtoupper((string) $session['currency']) : null,
         $paymentIntent,
         $customer,
+        $subscription,
         $details['name'] ?? null,
         $details['email'] ?? null,
         fb_utc_now(),
