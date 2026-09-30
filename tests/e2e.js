@@ -72,9 +72,12 @@ const check = (label, ok, extra = '') => { console.log(`${ok ? 'PASS' : 'FAIL'} 
   await page.fill('#recipient_phone', '12 34 56 78');
   await page.check('input[name=start_date][value="2026-10-26"]');
   await page.fill('#notes', 'Det er en overraskelse til hendes 80-års fødselsdag.');
-  await Promise.all([page.waitForURL(/gemt=1/), page.click('button[type=submit]')]);
+  check('marketing opt-in is unticked by default', !(await page.isChecked('input[name=marketing_consent]')));
+  await page.check('input[name=marketing_consent]');
+  await Promise.all([page.waitForURL(/gemt=1/), page.click('button.btn[type=submit]')]);
   const body = await page.textContent('body');
   check('confirmation shows start date and name', body.includes('Inger') && body.includes('mandag d. 26. oktober 2026'));
+  check('marketing opt-in stored with its text', sql(`SELECT marketing_consent_at IS NOT NULL AND marketing_consent_text LIKE 'Ja tak%' FROM orders WHERE stripe_session_id='${sessionId}'`) === '1');
   check('details saved', sql(`SELECT CONCAT(start_date,'|',recipient_name,'|',recipient_relation,'|',recipient_channel,'|',recipient_phone) FROM orders WHERE stripe_session_id='${sessionId}'`) === '2026-10-26|Inger Hansen|mormor|sms|+4512345678');
   await page.screenshot({ path: `${SHOTS}/tak-confirmation-desktop.png`, fullPage: true });
 
@@ -89,7 +92,14 @@ const check = (label, ok, extra = '') => { console.log(`${ok ? 'PASS' : 'FAIL'} 
 
   // Edit link
   await page.click('text=Ret oplysninger');
-  check('edit form is prefilled', (await page.inputValue('#recipient_phone')) === '+4512345678' && await page.isChecked('input[name=start_date][value="2026-10-26"]'));
+  check('edit form is prefilled', (await page.inputValue('#recipient_phone')) === '+4512345678' && await page.isChecked('input[name=start_date][value="2026-10-26"]') && await page.isChecked('input[name=marketing_consent]'));
+  const consentAt = sql(`SELECT marketing_consent_at FROM orders WHERE stripe_session_id='${sessionId}'`);
+  await Promise.all([page.waitForURL(/gemt=1/), page.click('button.btn[type=submit]')]);
+  check('re-saving keeps the original consent time', sql(`SELECT marketing_consent_at FROM orders WHERE stripe_session_id='${sessionId}'`) === consentAt);
+  await page.click('text=Ret oplysninger');
+  await page.uncheck('input[name=marketing_consent]');
+  await Promise.all([page.waitForURL(/gemt=1/), page.click('button.btn[type=submit]')]);
+  check('unticking withdraws consent', sql(`SELECT marketing_consent_at IS NULL AND marketing_consent_text IS NULL FROM orders WHERE stripe_session_id='${sessionId}'`) === '1');
 
   // Tampered start date is rejected
   const tampered = execSync(`curl -s -X POST --data-urlencode 'session_id=${sessionId}' -d 'start_date=2026-10-05&recipient_name=X&recipient_relation=mor&recipient_channel=email&recipient_email=x@example.com' ${SITE}/tak.php`).toString();

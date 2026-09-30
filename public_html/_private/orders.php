@@ -89,6 +89,18 @@ function fb_order_save_details(int $orderId, array $d): void
     ]);
 }
 
+/** Opt-in for marketing emails. Keeps the original consent time while it stays given. */
+function fb_order_save_marketing_consent(int $orderId, bool $given, string $text): void
+{
+    $stmt = fb_db()->prepare(
+        'UPDATE orders SET
+            marketing_consent_at = IF(?, COALESCE(marketing_consent_at, ?), NULL),
+            marketing_consent_text = IF(?, ?, NULL)
+         WHERE id = ?'
+    );
+    $stmt->execute([$given ? 1 : 0, fb_utc_now(), $given ? 1 : 0, $text, $orderId]);
+}
+
 /** Time of the first-ever paid order in this Stripe mode (test sales never move the live anchor). */
 function fb_first_sale_at(bool $livemode): ?DateTimeImmutable
 {

@@ -514,3 +514,5 @@ p { margin: 0; text-wrap: pretty; }
 .panel__actions { display: flex; flex-wrap: wrap; gap: 12px 28px; align-items: center; }
 .panel__actions form { margin: 0; }
 .link-button { background: none; border: 0; border-bottom: 1.5px solid #B87B5C; border-radius: 0; font: inherit; font-weight: 600; font-size: 16px; cursor: pointer; }
+.checkbox { display: flex; gap: 12px; align-items: flex-start; font-size: 15px; line-height: 1.5; color: var(--ink-soft); cursor: pointer; }
+.checkbox input { width: 20px; height: 20px; margin: 1px 0 0; flex-shrink: 0; accent-color: var(--terracotta); cursor: pointer; }

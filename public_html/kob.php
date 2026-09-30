@@ -48,7 +48,7 @@ try {
             'metadata' => ['product' => 'familieboger'],
         ],
         'custom_text' => [
-            'submit' => ['message' => 'Abonnementet fornyes automatisk hvert år til 899 kr., indtil du opsiger det. Du kan opsige når som helst. Efter betalingen vælger du startdato og fortæller os, hvem der skal have spørgsmålene.'],
+            'submit' => ['message' => 'Abonnementet fornyes automatisk hvert år til 899 kr., indtil du opsiger det. Du kan opsige når som helst med virkning fra næste periode; betalte perioder refunderes ikke. Efter betalingen vælger du startdato og fortæller os, hvem der skal have spørgsmålene.'],
         ],
     ]);
 } catch (FbStripeError $e) {

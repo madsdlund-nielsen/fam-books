@@ -30,6 +30,8 @@ CREATE TABLE IF NOT EXISTS orders (
   recipient_email       VARCHAR(190) NULL,
   recipient_phone       VARCHAR(40) NULL,
   notes                 TEXT NULL,
+  marketing_consent_at  DATETIME NULL COMMENT 'UTC; NULL = no consent to marketing emails',
+  marketing_consent_text VARCHAR(255) NULL COMMENT 'The opt-in text the buyer ticked',
   details_completed_at  DATETIME NULL COMMENT 'UTC',
 
   created_at            DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -55,11 +57,16 @@ CREATE TABLE IF NOT EXISTS waitlist (
 
 -- Already imported an earlier version of this file? Add the new column with:
 --   ALTER TABLE orders ADD COLUMN stripe_subscription_id VARCHAR(255) NULL AFTER stripe_customer_id;
+--   ALTER TABLE orders ADD COLUMN marketing_consent_at DATETIME NULL AFTER notes,
+--                      ADD COLUMN marketing_consent_text VARCHAR(255) NULL AFTER marketing_consent_at;
 
 -- Handy queries for phpMyAdmin:
 --   Funnel:      SELECT status, livemode, COUNT(*) FROM orders GROUP BY status, livemode;
 --   Paid orders: SELECT paid_at, buyer_name, buyer_email, start_date, recipient_name, recipient_channel
 --                FROM orders WHERE status = 'paid' ORDER BY paid_at;
+--   Buyers who opted in to marketing emails (e.g. discount on extra books):
+--                SELECT buyer_name, buyer_email, marketing_consent_at FROM orders
+--                WHERE status = 'paid' AND marketing_consent_at IS NOT NULL;
 --   Missing details (paid but not onboarded):
 --                SELECT buyer_email, paid_at FROM orders WHERE status = 'paid' AND details_completed_at IS NULL;
 --   Waitlist:    SELECT created_at, name, email, source FROM waitlist ORDER BY created_at;

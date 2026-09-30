@@ -23,6 +23,11 @@ venteliste.php      ◀── waitlist form on index.html (fetch, or plain POST 
 startdato.php       ◀── index.html shows "Første mulige start: …" under the price
 ```
 
+**Subscription**: 899 kr. per year, renewing automatically. At renewal the buyer can
+continue with the same family member or pick another. Cancelling stops the next renewal;
+paid periods are not refunded. Buyers can opt in to marketing emails on `tak.php`
+(unticked by default); only email offers to buyers where `marketing_consent_at` is set.
+
 **Start dates**: the earliest start is the Monday 3 weeks after the week of the
 **first-ever sale**. Before any sale it's 3 weeks after the current week, so it rolls
 forward each week. Once that Monday has passed, the earliest start is the next upcoming
@@ -66,8 +71,9 @@ never affect the live anchor. Change the numbers in `config.php` → `start_date
    key (`rk_live_…`) with **Checkout Sessions: Write** and **Customer portal: Write** is
    enough.
 3. Customer portal: Settings → Billing → Customer portal. Allow customers to **cancel
-   subscriptions** (at the end of the period) and update payment methods, then save. Do
-   this in both test and live mode, or "Administrér abonnement" on `tak.php` fails.
+   subscriptions** with cancellation **at the end of the billing period**, turn prorations
+   off (no refunds for the period already paid), and allow updating payment methods. Save
+   in both test and live mode, or "Administrér abonnement" on `tak.php` fails.
 4. Webhook: Developers → Webhooks → add endpoint `https://<site>/stripe-webhook.php` with
    events `checkout.session.completed` and `checkout.session.async_payment_succeeded`.
    Put the signing secret (`whsec_…`) in `config.php`.
@@ -90,6 +96,10 @@ FROM orders WHERE status = 'paid' AND livemode = 1 ORDER BY start_date, paid_at;
 
 -- Look up a buyer's subscription in Stripe: search the dashboard for stripe_subscription_id
 SELECT buyer_email, stripe_subscription_id FROM orders WHERE status = 'paid' AND livemode = 1;
+
+-- Buyers who opted in to marketing emails (discounts on extra books etc.)
+SELECT buyer_name, buyer_email, marketing_consent_at FROM orders
+WHERE status = 'paid' AND livemode = 1 AND marketing_consent_at IS NOT NULL;
 
 -- Paid but never filled in the details (follow up by mail)
 SELECT buyer_email, paid_at FROM orders
