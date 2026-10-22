@@ -83,7 +83,8 @@
    "description": "Hver uge i 12 måneder får jeres kære ét spørgsmål om sit liv på mail eller sms og svarer med tekst, tale eller billeder. Historierne samles i en indbundet bog med jeres eget omslag. Abonnementet fornyes automatisk hvert år og kan opsiges når som helst.",
    "image": "https://xn--familiebger-ngb.dk/assets/img/og-image.png",
    "brand": {
-    "@id": "https://xn--familiebger-ngb.dk/#organization"
+    "@type": "Brand",
+    "name": "Familiebøger"
    },
    "category": "Erindringsbøger og livshistorier",
    "offers": {
@@ -113,7 +114,27 @@
      "shippingDestination": {
       "@type": "DefinedRegion",
       "addressCountry": "DK"
+     },
+     "deliveryTime": {
+      "@type": "ShippingDeliveryTime",
+      "handlingTime": {
+       "@type": "QuantitativeValue",
+       "minValue": 5,
+       "maxValue": 10,
+       "unitCode": "DAY"
+      },
+      "transitTime": {
+       "@type": "QuantitativeValue",
+       "minValue": 1,
+       "maxValue": 3,
+       "unitCode": "DAY"
+      }
      }
+    },
+    "hasMerchantReturnPolicy": {
+     "@type": "MerchantReturnPolicy",
+     "applicableCountry": "DK",
+     "returnPolicyCategory": "https://schema.org/MerchantReturnNotPermitted"
     }
    }
   },

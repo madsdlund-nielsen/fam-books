@@ -45,6 +45,7 @@ const check = (label, ok, extra = '') => { console.log(`${ok ? 'PASS' : 'FAIL'} 
   check('JSON-LD FAQ matches the visible FAQ', JSON.stringify(byType.FAQPage.mainEntity.map((q) => q.name)) === JSON.stringify(seo.faqVisible));
   const offer = byType.Product.offers;
   check('JSON-LD offer: 899 DKK per year incl. VAT', offer.price === '899' && offer.priceCurrency === 'DKK' && offer.priceSpecification.billingDuration === 'P1Y' && offer.priceSpecification.valueAddedTaxIncluded === true);
+  check('JSON-LD merchant listing: typed brand, delivery time, return policy', byType.Product.brand['@type'] === 'Brand' && offer.shippingDetails.deliveryTime['@type'] === 'ShippingDeliveryTime' && offer.hasMerchantReturnPolicy['@type'] === 'MerchantReturnPolicy');
   check('canonical and og:url are the punycode domain', seo.canonical === 'https://xn--familiebger-ngb.dk/' && seo.ogUrl === seo.canonical);
   check('og:image is absolute and the file exists', seo.ogImage === 'https://xn--familiebger-ngb.dk/assets/img/og-image.png' && execSync(`curl -s -o /dev/null -w '%{http_code} %{content_type}' ${SITE}/assets/img/og-image.png`).toString() === '200 image/png');
   check('twitter card + description present', seo.twitter === 'summary_large_image' && seo.description.length > 50 && seo.description.length <= 160);
